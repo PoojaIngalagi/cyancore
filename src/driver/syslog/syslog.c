@@ -8,7 +8,7 @@
  * Organisation		: Cyancore Core-Team
  */
 
-#include <syslog/syslog.h>
+#include <driver/syslog.h>
 #include <string.h>
 
 #define MEMSET_CLEAR	0x00
