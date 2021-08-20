@@ -10,6 +10,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include <status.h>
 #include <machine_call.h>
 #include <plat_arch.h>
@@ -93,3 +94,56 @@ mret_t arch_machine_call(unsigned int code, unsigned int a0, unsigned int a1, un
 	mcall(code, a0, a1, a2, &ret);
 	return ret;
 }
+
+#define push(x)		asm volatile("push " #x)
+
+/* Fixed memory block of 32 bytes on bss */
+static uint8_t arch_gpr_mem[32];
+
+/**
+ * arch_grp_readout - Get the values of general purpose registers
+ *
+ * @return - Struct pointer for registers on stack
+ */
+arch_gpr_t *arch_gpr_readout()
+{
+	uint16_t sp;
+	/*
+	 * Save on stack first.
+	 * This prevents from registers getting modified.
+	 */
+	push(r31); push(r30); push(r29);
+	push(r28); push(r27); push(r26);
+	push(r25); push(r24); push(r23);
+	push(r22); push(r21); push(r20);
+	push(r19); push(r18); push(r17);
+	push(r16); push(r15); push(r14);
+	push(r13); push(r12); push(r11);
+	push(r10); push(r9); push(r8);
+	push(r7); push(r6); push(r5);
+	push(r4); push(r3); push(r2);
+	push(r1); push(r0);
+
+	/* Store current Stack pointer */
+	sp = (uint16_t)(MMIO8(SPL));
+	sp |= (uint16_t)(MMIO8(SPH) << 8);
+
+	/*
+	 * Copy Stack content to arch_grp_mem to preserve
+	 * the content after context switch of function
+	 *
+	 * Also SP+1 is done as stack pointer pre-decrements
+	 */
+	memcpy((void *)arch_gpr_mem, (void *)(sp+1), 32);
+
+	/* Set SP to original value when called by the function */
+	sp += 32;
+	/* Restore SP */
+	MMIO8(SPL) = (uint8_t)(sp & 0xff);
+	MMIO8(SPH) = (uint8_t)((sp & 0xff00) >> 8);
+
+	/* Return the memory block */
+	return (arch_gpr_t *)arch_gpr_mem;
+}
+
+#undef push
