@@ -18,6 +18,8 @@
 
 gpio_port_t led_13;
 
+extern void print_arch_reg();
+
 void plug()
 {
 	bootstrap();
@@ -28,6 +30,7 @@ void plug()
 	gpio_pin_mode(&led_13, out);
 	gpio_pin_clear(&led_13);
 	printf("Demo Program!\n");
+	print_arch_reg();
 	printf("< ! > Running Blinky ... [");
 	return;
 }
